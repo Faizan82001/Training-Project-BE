@@ -1,0 +1,29 @@
+{
+  "definition": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Medical Data API Documentation",
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "https://api.dev.mddata.growexx.com",
+        "description": "main server"
+      },
+      {
+        "url": "http://localhost:8000",
+        "description": "local server"
+      }
+    ],
+    "components": {
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    }
+  },
+  "apis": ["./swagger/*.Swagger.js"]
+}

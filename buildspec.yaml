@@ -1,0 +1,48 @@
+version: 0.2
+environment_variables:
+  plaintext:
+     S3_BUCKET: "s3-interns-project-artifacts"
+     FUNCTION_NAME: "mddata-usw1-node-function"
+     projectKey: "medical-data-be-intern"
+     projectVersion: "master"
+     projectName: "medical-data-be-intern"
+env:
+  parameter-store:
+     SONAR_TOKEN: 'SONAR_TOKEN'
+     SONAR_HOST: 'SONAR_HOST'
+phases:
+  install:
+      runtime-versions:
+       nodejs: 18
+      commands:
+       - echo installing serverless framework
+       - npm install
+  pre_build:
+    commands:
+      - echo install pre build commands
+      - aws s3 cp s3://$S3_BUCKET/mddata-be-artifacts/config/development.env .
+      - aws s3 cp s3://$S3_BUCKET/mddata-be-artifacts/config/testing.env .
+      - ls -la
+  build:
+    commands:
+      - echo Entering build Phase
+      - echo Running tests
+      - npm test
+      - echo Runnng sonar-scanner on `date`
+      - curl ifconfig.co
+      - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.2.0.1227-linux.zip
+      - unzip sonar-scanner-cli-3.2.0.1227-linux.zip
+      - aws s3 cp s3://$S3_BUCKET/mddata-be-artifacts/config/sonar-scanner.properties sonar-scanner-3.2.0.1227-linux/conf/sonar-scanner.properties
+      - ./sonar-scanner-3.2.0.1227-linux/bin/sonar-scanner -Dsonar.host.url=$SONAR_HOST -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=$projectKey -Dsonar.projectVersion=$projectVersion
+      - echo test completed
+      - zip -r function.zip . -x test/**\* .scannerwork/**\* .nyc_output/**\* coverage/**\* migrations/**\* sonar-scanner-cli-3.2.0.1227-linux.zip sonar-scanner-3.2.0.1227-linux/**\*
+      - ls -la
+      - NODE_ENV=development npx sequelize db:migrate
+  post_build:
+    commands:
+      - echo Entering Post_Build Phase
+      - aws s3 cp function.zip s3://$S3_BUCKET/mddata-usw1-node-pip/
+      - aws lambda update-function-code --function-name "$FUNCTION_NAME" --s3-bucket $S3_BUCKET --s3-key mddata-usw1-node-pip/function.zip
+artifacts:
+   files:
+    - '**/*'
